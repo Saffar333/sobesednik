@@ -55,10 +55,11 @@
         }
 
         .app-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             color: var(--tg-theme-text-color, #ffffff);
             margin: 0;
+            white-space: nowrap;
         }
 
         h1 {
@@ -87,12 +88,12 @@
         }
 
         .create-btn-new {
-            padding: 12px 20px;
+            padding: 10px 16px;
             background-color: var(--tg-theme-button-color, #3390ec);
             color: var(--tg-theme-button-text-color, #ffffff);
             border: none;
-            border-radius: 12px;
-            font-size: 15px;
+            border-radius: 10px;
+            font-size: 13px;
             font-weight: 600;
             display: flex;
             align-items: center;
@@ -100,11 +101,17 @@
             cursor: pointer;
             transition: all 0.2s ease;
             box-shadow: 0 2px 8px rgba(51, 144, 236, 0.3);
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .create-btn-new:active {
             transform: scale(0.98);
             opacity: 0.9;
+        }
+
+        .create-btn-new svg {
+            flex-shrink: 0;
         }
 
         .create-btn-new svg {
@@ -589,6 +596,108 @@
             font-size: 16px;
             margin-bottom: 8px;
         }
+
+        /* Адаптация под мобильные устройства */
+        @media (max-width: 480px) {
+            .nav-content {
+                gap: 8px;
+            }
+
+            .app-title {
+                font-size: 16px;
+            }
+
+            .create-btn-new {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .create-btn-text-full {
+                display: none !important;
+            }
+
+            .create-btn-text-short {
+                display: inline !important;
+            }
+
+            .container {
+                padding: 12px;
+            }
+
+            .tabs {
+                gap: 0;
+                padding: 3px;
+            }
+
+            .tab {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            .grid {
+                gap: 12px;
+            }
+
+            .character-card {
+                padding: 12px;
+            }
+
+            .character-name {
+                font-size: 15px;
+            }
+
+            .character-description {
+                font-size: 12px;
+            }
+
+            .bottom-nav {
+                padding: 8px 16px;
+            }
+
+            .nav-btn {
+                font-size: 11px;
+                gap: 4px;
+            }
+
+            .profile-avatar {
+                width: 80px;
+                height: 80px;
+                font-size: 32px;
+            }
+
+            .profile-name {
+                font-size: 18px;
+            }
+
+            .subscription-panel {
+                padding: 16px;
+            }
+
+            .subscription-title {
+                font-size: 18px;
+            }
+
+            .subscription-price-value {
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .app-title {
+                font-size: 15px;
+            }
+
+            .create-btn-new {
+                padding: 8px 10px;
+                font-size: 11px;
+            }
+
+            .create-btn-new svg {
+                width: 16px;
+                height: 16px;
+                margin-right: 4px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -597,10 +706,11 @@
         <div class="nav-content">
             <h1 class="app-title">Собеседник</h1>
             <button class="create-btn-new" id="createBtn">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="margin-right: 8px;">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="margin-right: 6px;">
                     <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
                 </svg>
-                Создать собственного персонажа
+                <span class="create-btn-text-full">Создать персонажа</span>
+                <span class="create-btn-text-short" style="display: none;">Создать</span>
             </button>
         </div>
     </div>
