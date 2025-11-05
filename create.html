@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Создать персонажа</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="js/auth.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #1a1a1a);
+            color: var(--tg-theme-text-color, #ffffff);
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 24px;
+            color: var(--tg-theme-text-color, #ffffff);
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color, #ffffff);
+        }
+
+        label .required {
+            color: var(--tg-theme-destructive-text-color, #ff3b30);
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: var(--tg-theme-secondary-bg-color, #2a2a2a);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            color: var(--tg-theme-text-color, #ffffff);
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--tg-theme-button-color, #3390ec);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .char-counter {
+            text-align: right;
+            font-size: 12px;
+            color: var(--tg-theme-hint-color, #8e8e93);
+            margin-top: 4px;
+        }
+
+        .hint {
+            font-size: 13px;
+            color: var(--tg-theme-hint-color, #8e8e93);
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        .avatar-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--tg-theme-section-bg-color, #3a3a3a) 0%, var(--tg-theme-secondary-bg-color, #2a2a2a) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 16px auto;
+            font-size: 48px;
+            color: var(--tg-theme-text-color, #ffffff);
+            overflow: hidden;
+        }
+
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-top: 24px;
+        }
+
+        .submit-btn:active {
+            opacity: 0.8;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background-color: rgba(255, 59, 48, 0.1);
+            border: 1px solid var(--tg-theme-destructive-text-color, #ff3b30);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            color: var(--tg-theme-destructive-text-color, #ff3b30);
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-message {
+            background-color: rgba(52, 199, 89, 0.1);
+            border: 1px solid #34c759;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            color: #34c759;
+            font-size: 14px;
+            display: none;
+        }
+
+        /* Лоадер */
+        .loader {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--tg-theme-button-text-color, rgba(255, 255, 255, 0.3));
+            border-top-color: var(--tg-theme-button-text-color, #ffffff);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .submit-btn.loading .btn-text {
+            display: none;
+        }
+
+        .submit-btn.loading .loader {
+            display: block;
+        }
+
+        /* Загрузка файла */
+        .file-upload-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .file-upload-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px;
+            background-color: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-upload-btn:active {
+            transform: scale(0.98);
+            opacity: 0.8;
+        }
+
+        .file-upload-btn svg {
+            transition: transform 0.2s ease;
+        }
+
+        .file-upload-btn:active svg {
+            transform: rotate(90deg);
+        }
+
+        .upload-status {
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+
+        .upload-status.loading {
+            display: block;
+            background-color: var(--tg-theme-secondary-bg-color, #2a2a2a);
+            color: var(--tg-theme-hint-color, #999);
+        }
+
+        .upload-status.success {
+            display: block;
+            background-color: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+        }
+
+        .upload-status.error {
+            display: block;
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+        }
+
+        /* Переключатель публичности */
+        .toggle-group {
+            background-color: var(--tg-theme-secondary-bg-color, #2a2a2a);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .toggle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .toggle-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color, #ffffff);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 51px;
+            height: 31px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--tg-theme-hint-color, #8e8e93);
+            transition: 0.3s;
+            border-radius: 31px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 27px;
+            width: 27px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--tg-theme-button-color, #3390ec);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        .toggle-description {
+            font-size: 13px;
+            color: var(--tg-theme-hint-color, #8e8e93);
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <h1 style="margin: 0;">Создать персонажа</h1>
+            <button type="button" id="closeBtn" style="background: none; border: none; color: var(--tg-theme-hint-color, #999); font-size: 28px; cursor: pointer; padding: 8px; min-width: 40px; min-height: 40px; display: flex; align-items: center; justify-content: center;">&times;</button>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <form id="characterForm">
+            <!-- Имя персонажа -->
+            <div class="form-group">
+                <label for="name">
+                    Имя персонажа <span class="required">*</span>
+                </label>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    placeholder="Например: Сократ"
+                    maxlength="100"
+                    required
+                >
+                <div class="char-counter">
+                    <span id="nameCounter">0</span>/100
+                </div>
+            </div>
+
+            <!-- Превью аватара -->
+            <div class="avatar-preview" id="avatarPreview">
+                <span id="avatarLetter">?</span>
+                <img id="avatarImage" style="display: none;">
+            </div>
+
+            <!-- Загрузка аватара -->
+            <div class="form-group">
+                <label for="avatar_file">
+                    Аватар персонажа
+                </label>
+                <div class="file-upload-wrapper">
+                    <input
+                        type="file"
+                        id="avatar_file"
+                        name="avatar_file"
+                        accept="image/jpeg,image/png,image/jpg,image/webp"
+                        style="display: none;"
+                    >
+                    <button type="button" class="file-upload-btn" id="uploadBtn">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span id="uploadBtnText">Выбрать фото</span>
+                    </button>
+                    <div class="upload-status" id="uploadStatus"></div>
+                </div>
+                <p class="hint">Необязательно. JPG, PNG или WEBP, максимум 5 МБ</p>
+                <input type="hidden" id="avatar_url" name="avatar_url">
+            </div>
+
+            <!-- Описание -->
+            <div class="form-group">
+                <label for="description">
+                    Краткое описание <span class="required">*</span>
+                </label>
+                <textarea
+                    id="description"
+                    name="description"
+                    placeholder="Опишите персонажа в 2-3 предложениях"
+                    maxlength="500"
+                    required
+                ></textarea>
+                <div class="char-counter">
+                    <span id="descCounter">0</span>/500
+                </div>
+                <p class="hint">Кто этот персонаж? Чем он известен?</p>
+            </div>
+
+            <!-- Личность -->
+            <div class="form-group">
+                <label for="personality">
+                    Характер и манера общения <span class="required">*</span>
+                </label>
+                <textarea
+                    id="personality"
+                    name="personality"
+                    placeholder="Опишите стиль общения, характер, особенности речи"
+                    maxlength="1000"
+                    required
+                ></textarea>
+                <div class="char-counter">
+                    <span id="persCounter">0</span>/1000
+                </div>
+                <p class="hint">Как персонаж говорит? Какой у него характер?</p>
+            </div>
+
+            <!-- Приветственное сообщение -->
+            <div class="form-group">
+                <label for="greeting_message">
+                    Приветственное сообщение <span class="required">*</span>
+                </label>
+                <textarea
+                    id="greeting_message"
+                    name="greeting_message"
+                    placeholder="Первое сообщение от персонажа"
+                    maxlength="500"
+                    required
+                ></textarea>
+                <div class="char-counter">
+                    <span id="greetCounter">0</span>/500
+                </div>
+                <p class="hint">Что персонаж скажет при первой встрече?</p>
+            </div>
+
+            <!-- Переключатель публичности -->
+            <div class="toggle-group">
+                <div class="toggle-header">
+                    <div class="toggle-title">Сделать публичным</div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="is_preset" name="is_preset">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-description">
+                    Публичные персонажи доступны всем пользователям. Личные - только вам.
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                <span class="btn-text">Создать персонажа</span>
+                <div class="loader"></div>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // Инициализация Telegram Web App
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Инициализация Supabase
+        const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+        // Элементы формы
+        const form = document.getElementById('characterForm');
+        const nameInput = document.getElementById('name');
+        const avatarInput = document.getElementById('avatar_url');
+        const avatarFileInput = document.getElementById('avatar_file');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadBtnText = document.getElementById('uploadBtnText');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const closeBtn = document.getElementById('closeBtn');
+        const descInput = document.getElementById('description');
+        const persInput = document.getElementById('personality');
+        const greetInput = document.getElementById('greeting_message');
+        const isPresetCheckbox = document.getElementById('is_preset');
+        const submitBtn = document.getElementById('submitBtn');
+        const errorMsg = document.getElementById('errorMessage');
+        const successMsg = document.getElementById('successMessage');
+
+        // Храним выбранный файл для последующей загрузки
+        let selectedFile = null;
+
+        // Счетчики символов
+        const counters = {
+            name: { input: nameInput, counter: document.getElementById('nameCounter') },
+            description: { input: descInput, counter: document.getElementById('descCounter') },
+            personality: { input: persInput, counter: document.getElementById('persCounter') },
+            greeting: { input: greetInput, counter: document.getElementById('greetCounter') }
+        };
+
+        // Обновление счетчиков
+        Object.values(counters).forEach(({ input, counter }) => {
+            input.addEventListener('input', () => {
+                counter.textContent = input.value.length;
+            });
+        });
+
+        // Превью аватара
+        nameInput.addEventListener('input', () => {
+            const letter = nameInput.value.charAt(0).toUpperCase() || '?';
+            document.getElementById('avatarLetter').textContent = letter;
+        });
+
+        // Функция обновления превью аватара
+        function updateAvatarPreview(url) {
+            const avatarImg = document.getElementById('avatarImage');
+            const avatarLetter = document.getElementById('avatarLetter');
+
+            if (url) {
+                avatarImg.src = url;
+                avatarImg.style.display = 'block';
+                avatarLetter.style.display = 'none';
+
+                avatarImg.onerror = () => {
+                    avatarImg.style.display = 'none';
+                    avatarLetter.style.display = 'flex';
+                };
+            } else {
+                avatarImg.style.display = 'none';
+                avatarLetter.style.display = 'flex';
+            }
+        }
+
+        // Кнопка закрытия
+        closeBtn.addEventListener('click', () => {
+            console.log('Кнопка закрытия нажата - возврат на страницу персонажей');
+
+            // Получаем encoded ID из URL
+            const encodedId = getEncodedIdFromURL();
+
+            // Всегда возвращаемся на страницу персонажей (не закрываем webapp)
+            if (encodedId) {
+                console.log('Перенаправляем на страницу персонажей с параметром user');
+                window.location.href = `index.html?user=${encodedId}`;
+            } else {
+                console.log('Перенаправляем на страницу персонажей');
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Открытие диалога выбора файла
+        uploadBtn.addEventListener('click', () => {
+            avatarFileInput.click();
+        });
+
+        // Выбор файла - только превью, без загрузки
+        avatarFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Проверка типа файла
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                uploadStatus.textContent = '❌ Только JPG, PNG или WEBP';
+                uploadStatus.className = 'upload-status error';
+                selectedFile = null;
+                return;
+            }
+
+            // Проверка размера (5 МБ)
+            if (file.size > 5 * 1024 * 1024) {
+                uploadStatus.textContent = '❌ Файл слишком большой (макс. 5 МБ)';
+                uploadStatus.className = 'upload-status error';
+                selectedFile = null;
+                return;
+            }
+
+            // Сохраняем файл для загрузки при создании персонажа
+            selectedFile = file;
+
+            // Создаем локальный URL для превью
+            const localUrl = URL.createObjectURL(file);
+            updateAvatarPreview(localUrl);
+
+            // Показываем успех
+            uploadStatus.textContent = '✅ Фото выбрано';
+            uploadStatus.className = 'upload-status success';
+            uploadBtnText.textContent = 'Изменить фото';
+        });
+
+        // Показать ошибку
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.style.display = 'block';
+            successMsg.style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Показать успех
+        function showSuccess(message) {
+            successMsg.textContent = message;
+            successMsg.style.display = 'block';
+            errorMsg.style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Отправка формы
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Получаем telegram_id из URL (гибридный подход)
+            const urlTelegramId = getTelegramIdFromURL();
+
+            // Получаем данные пользователя из initDataUnsafe (дополнительно)
+            const user = tg.initDataUnsafe?.user;
+            const tgTelegramId = user?.id;
+
+            // Используем URL telegram_id как основной
+            const telegramId = urlTelegramId || tgTelegramId;
+            const username = user?.username || '';
+            const firstName = user?.first_name || '';
+
+            if (!telegramId) {
+                showError('Ошибка: не удалось получить данные пользователя. Откройте приложение через Telegram бот.');
+                return;
+            }
+
+            console.log('👤 Telegram ID (из URL):', urlTelegramId);
+            console.log('👤 Telegram ID (из TG):', tgTelegramId);
+            console.log('✅ Используется:', telegramId);
+
+            // Блокируем кнопку
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+
+            try {
+                // Ищем пользователя в таблице users
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('telegram_id', telegramId)
+                    .maybeSingle();
+
+                let creatorId = null;
+
+                if (userData) {
+                    // Пользователь найден
+                    creatorId = userData.id;
+                } else {
+                    // Пользователь не найден - создаем нового
+                    const { data: newUser, error: createError } = await supabase
+                        .from('users')
+                        .insert({
+                            telegram_id: telegramId,
+                            username: username,
+                            first_name: firstName
+                        })
+                        .select('id')
+                        .single();
+
+                    if (createError) {
+                        console.error('Ошибка создания пользователя:', createError);
+                    } else if (newUser) {
+                        creatorId = newUser.id;
+                    }
+                }
+
+                // Собираем данные персонажа БЕЗ фото
+                const characterData = {
+                    name: nameInput.value.trim(),
+                    description: descInput.value.trim(),
+                    personality: persInput.value.trim(),
+                    greeting_message: greetInput.value.trim(),
+                    avatar_url: null, // Сначала создаем без фото
+                    is_preset: isPresetCheckbox.checked, // true = публичный, false = личный
+                    creator_id: creatorId,
+                    is_active: true
+                };
+
+                // СНАЧАЛА создаём персонажа
+                const { data, error } = await supabase
+                    .from('characters')
+                    .insert(characterData)
+                    .select()
+                    .single();
+
+                if (error) {
+                    throw error;
+                }
+
+                // ПОТОМ, если выбрано фото, загружаем его и обновляем персонажа
+                if (selectedFile) {
+                    try {
+                        // Генерируем уникальное имя файла
+                        const timestamp = Date.now();
+                        const randomStr = Math.random().toString(36).substring(2, 8);
+                        const ext = selectedFile.name.split('.').pop();
+                        const fileName = `avatar_${timestamp}_${randomStr}.${ext}`;
+
+                        // Загружаем в Supabase Storage
+                        const { data: uploadData, error: uploadError } = await supabase.storage
+                            .from('character-avatars')
+                            .upload(fileName, selectedFile, {
+                                cacheControl: '3600',
+                                upsert: false
+                            });
+
+                        if (uploadError) {
+                            console.error('Ошибка загрузки фото:', uploadError);
+                            // Не останавливаем процесс, персонаж уже создан
+                        } else {
+                            // Получаем публичный URL
+                            const { data: urlData } = supabase.storage
+                                .from('character-avatars')
+                                .getPublicUrl(fileName);
+
+                            const avatarUrl = urlData.publicUrl;
+
+                            // Обновляем персонажа с avatar_url
+                            await supabase
+                                .from('characters')
+                                .update({ avatar_url: avatarUrl })
+                                .eq('id', data.id);
+                        }
+                    } catch (photoError) {
+                        console.error('Ошибка при работе с фото:', photoError);
+                        // Персонаж уже создан, не критично
+                    }
+                }
+
+                console.log('Персонаж создан:', data);
+
+                // Показываем успех
+                showSuccess(`✅ Персонаж "${data.name}" успешно создан!`);
+
+                // Отправляем данные в бота (только в Telegram)
+                if (window.Telegram?.WebApp?.sendData) {
+                    tg.sendData(JSON.stringify({
+                        action: 'character_created',
+                        character_id: data.id,
+                        character_name: data.name,
+                        telegram_id: telegramId
+                    }));
+                }
+
+                // Перенаправляем на главную страницу через 1.5 секунды
+                setTimeout(() => {
+                    const encodedId = getEncodedIdFromURL();
+                    if (window.Telegram?.WebApp?.close) {
+                        tg.close();
+                    } else if (encodedId) {
+                        window.location.href = `index.html?user=${encodedId}`;
+                    } else {
+                        window.location.href = '/';
+                    }
+                }, 1500);
+
+            } catch (error) {
+                console.error('Ошибка при создании персонажа:', error);
+                showError(`❌ Ошибка: ${error.message}`);
+            } finally {
+                // Разблокируем кнопку
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
+            }
+        });
+
+        // Сообщаем Telegram, что приложение готово
+        tg.ready();
+        console.log('✅ Приложение готово');
+    </script>
+</body>
+</html>
