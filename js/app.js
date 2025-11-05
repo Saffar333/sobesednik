@@ -337,63 +337,12 @@ function renderProfile(user) {
     const totalMessages = user.total_message_count || 0;
     const dailyMessages = user.daily_message_count || 0;
 
-    // Статус подписки
-    const hasSubscription = user.subscription === true;
-
-    // HTML панели подписки
-    const subscriptionPanel = hasSubscription ? `
-        <div class="subscription-panel subscription-active">
-            <div class="subscription-content">
-                <div class="subscription-badge">✨ PREMIUM</div>
-                <div class="subscription-title">Премиум активен</div>
-                <div class="subscription-description">
-                    Вы получили доступ ко всем возможностям приложения без ограничений
-                </div>
-                <div class="subscription-status">
-                    <span class="subscription-status-icon">💎</span>
-                    <span>Подписка активна</span>
-                </div>
-            </div>
-        </div>
-    ` : `
-        <div class="subscription-panel">
-            <div class="subscription-content">
-                <div class="subscription-badge">🚀 СТАНЬТЕ PREMIUM</div>
-                <div class="subscription-title">Безграничное общение</div>
-                <div class="subscription-description">
-                    Получите полный доступ ко всем функциям и персонажам
-                </div>
-                <div class="subscription-features">
-                    <div class="subscription-feature">
-                        <div class="subscription-feature-icon">✓</div>
-                        <div>Безлимитные сообщения</div>
-                    </div>
-                    <div class="subscription-feature">
-                        <div class="subscription-feature-icon">✓</div>
-                        <div>Создание персонажей без лимитов</div>
-                    </div>
-                </div>
-                <div class="subscription-price">
-                    <span class="subscription-price-value">999</span>
-                    <span class="subscription-price-currency">₽</span>
-                    <span class="subscription-price-period">/ месяц</span>
-                </div>
-                <button class="subscription-btn" onclick="handleSubscription()">
-                    Оформить подписку
-                    <span class="subscription-btn-icon">→</span>
-                </button>
-            </div>
-        </div>
-    `;
-
     elements.profileContent.innerHTML = `
         <div class="profile-header">
             <div class="profile-avatar">${avatarContent}</div>
             <div class="profile-name">${displayName}</div>
             ${username ? `<div class="profile-username">@${username}</div>` : ''}
         </div>
-
-        ${subscriptionPanel}
 
         <div class="profile-stats">
             <div class="stat-card">
@@ -409,34 +358,6 @@ function renderProfile(user) {
 
     console.log('✅ Профиль отображен');
 }
-
-// ======================
-// ПОДПИСКА
-// ======================
-
-// Обработчик нажатия на кнопку подписки
-window.handleSubscription = function() {
-    console.log('🔔 Нажата кнопка оформления подписки');
-
-    try {
-        // Отправляем данные боту о намерении оформить подписку
-        const data = JSON.stringify({
-            action: 'subscribe',
-            telegram_id: telegramId
-        });
-
-        console.log('📤 Отправка данных боту:', data);
-        tg.sendData(data);
-
-        // Закрываем WebApp
-        console.log('🚪 Закрытие WebApp...');
-        tg.close();
-    } catch (error) {
-        console.error('❌ Ошибка при отправке данных:', error);
-        // Если sendData не работает, просто закрываем WebApp
-        tg.close();
-    }
-};
 
 // ======================
 // УТИЛИТЫ
